@@ -1319,10 +1319,12 @@
         }
 
         async function apiPost(data) {
+            // Use text/plain to avoid CORS preflight with Google Apps Script
             const response = await fetch(API_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(data),
+                redirect: 'follow'
             });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             return response.json();
