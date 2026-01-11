@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TYPE_RACER // CAM CASPERSON</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Terminal Colors - Dark Navy Theme */
+            --bg-primary: #161b22;
+            --bg-secondary: #1c2129;
+            --bg-tertiary: #22272e;
+            --bg-highlight: #2d333b;
+
+            --text-primary: #e0e0e0;
+            --text-secondary: #888888;
+            --text-muted: #555555;
+
+            --green: #39ff14;
+            --green-dim: #1a7a0a;
+            --green-glow: rgba(57, 255, 20, 0.15);
+
+            --cyan: #22d3ee;
+            --cyan-dim: #0e5a66;
+
+            --amber: #ffbf00;
+            --red: #ff3333;
+
+            /* Typography */
+            --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 14px;
+        }
+
+        body {
+            font-family: var(--font-mono);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* CRT Scanline Effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.1) 2px,
+                rgba(0, 0, 0, 0.1) 4px
+            );
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* Vignette */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.4) 100%);
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        ::selection {
+            background: var(--green);
+            color: var(--bg-primary);
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--bg-highlight);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header__brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header__back {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.15s;
+        }
+
+        .header__back:hover {
+            color: var(--cyan);
+        }
+
+        .header__title {
+            color: var(--green);
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .header__best {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .header__best span {
+            color: var(--amber);
+            font-weight: 600;
+        }
+
+        .close-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--red);
+            border-radius: 4px;
+            color: var(--red);
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.15s;
+        }
+
+        .close-btn:hover {
+            background: var(--red);
+            color: var(--bg-primary);
+            box-shadow: 0 0 20px rgba(255, 51, 51, 0.4);
+        }
+
+        /* Main Container */
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Game Box */
+        .game-box {
+            background: var(--bg-secondary);
+            border: 1px solid var(--bg-highlight);
+            border-radius: 4px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .game-box__header {
+            background: var(--bg-tertiary);
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--bg-highlight);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .game-box__file {
+            color: var(--cyan);
+            font-size: 0.8rem;
+        }
+
+        .game-box__status {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .game-box__content {
+            padding: 24px;
+        }
+
+        /* Start Screen */
+        .start-screen {
+            text-align: center;
+            padding: 48px 24px;
+        }
+
+        .start-screen__ascii {
+            color: var(--green);
+            font-size: 0.9rem;
+            line-height: 1.4;
+            white-space: pre;
+            margin-bottom: 24px;
+            text-shadow: 0 0 10px var(--green-glow), 0 0 20px var(--green-glow);
+        }
+
+        .start-screen__title {
+            font-size: 1.2rem;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .start-screen__subtitle {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-bottom: 32px;
+        }
+
+        .btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--green-dim);
+            color: var(--green);
+            padding: 12px 32px;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .btn:hover {
+            background: var(--green-glow);
+            border-color: var(--green);
+            box-shadow: 0 0 20px var(--green-glow);
+        }
+
+        .btn--secondary {
+            border-color: var(--cyan-dim);
+            color: var(--cyan);
+        }
+
+        .btn--secondary:hover {
+            border-color: var(--cyan);
+            background: rgba(34, 211, 238, 0.1);
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.15);
+        }
+
+        /* Countdown */
+        .countdown {
+            text-align: center;
+            padding: 48px;
+        }
+
+        .countdown__number {
+            font-size: 6rem;
+            font-weight: 700;
+            color: var(--green);
+            text-shadow: 0 0 30px var(--green-glow), 0 0 60px var(--green-glow);
+            animation: countPulse 1s ease-out;
+        }
+
+        @keyframes countPulse {
+            0% { transform: scale(1.5); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .countdown__text {
+            color: var(--text-secondary);
+            margin-top: 16px;
+            font-size: 0.9rem;
+        }
+
+        /* Race Track */
+        .race-track {
+            background: var(--bg-primary);
+            border: 1px solid var(--bg-highlight);
+            border-radius: 4px;
+            padding: 16px;
+            margin-bottom: 24px;
+            font-size: 0.7rem;
+            line-height: 1.4;
+        }
+
+        .race-track__labels {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .race-track__bar {
+            background: var(--bg-tertiary);
+            height: 24px;
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .race-track__progress {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background: linear-gradient(90deg, var(--green-dim), var(--green));
+            width: 0%;
+            transition: width 0.1s ease-out;
+            box-shadow: 0 0 10px var(--green-glow);
+        }
+
+        .race-track__car {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            left: 0%;
+            color: var(--cyan);
+            font-weight: 700;
+            transition: left 0.1s ease-out;
+            text-shadow: 0 0 10px var(--cyan);
+            z-index: 2;
+        }
+
+        .race-track__finish {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--amber);
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat {
+            background: var(--bg-primary);
+            border: 1px solid var(--bg-highlight);
+            border-radius: 4px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat__label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+
+        .stat__value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .stat__value--wpm {
+            color: var(--amber);
+        }
+
+        .stat__value--time {
+            color: var(--cyan);
+        }
+
+        .stat__value--accuracy {
+            color: var(--green);
+        }
+
+        /* Quote Display */
+        .quote-display {
+            background: var(--bg-primary);
+            border: 1px solid var(--bg-highlight);
+            border-radius: 4px;
+            padding: 24px;
+            font-size: 1rem;
+            line-height: 2;
+            min-height: 200px;
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        .quote-display__text {
+            word-wrap: break-word;
+        }
+
+        .char {
+            transition: color 0.05s, text-shadow 0.05s;
+        }
+
+        .char--correct {
+            color: var(--green);
+            text-shadow: 0 0 8px var(--green-glow);
+        }
+
+        .char--incorrect {
+            color: var(--red);
+            background: rgba(255, 51, 51, 0.2);
+            text-shadow: 0 0 8px rgba(255, 51, 51, 0.3);
+        }
+
+        .char--current {
+            border-bottom: 2px solid var(--cyan);
+            animation: cursorBlink 0.8s ease-in-out infinite;
+        }
+
+        @keyframes cursorBlink {
+            0%, 100% { border-color: var(--cyan); }
+            50% { border-color: transparent; }
+        }
+
+        .char--pending {
+            color: var(--text-muted);
+        }
+
+        .quote-display__author {
+            margin-top: 16px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-style: italic;
+        }
+
+        /* Hidden Input */
+        .hidden-input {
+            position: absolute;
+            left: -9999px;
+            opacity: 0;
+        }
+
+        /* Results Screen */
+        .results {
+            text-align: center;
+            padding: 24px;
+        }
+
+        .results__title {
+            font-size: 1.5rem;
+            color: var(--green);
+            margin-bottom: 8px;
+            text-shadow: 0 0 20px var(--green-glow);
+        }
+
+        .results__subtitle {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-bottom: 32px;
+        }
+
+        .results__new-best {
+            display: inline-block;
+            background: var(--amber);
+            color: var(--bg-primary);
+            padding: 4px 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            animation: bestPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes bestPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 191, 0, 0.4); }
+            50% { box-shadow: 0 0 20px 5px rgba(255, 191, 0, 0.2); }
+        }
+
+        .results__stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .results__stat {
+            background: var(--bg-primary);
+            border: 1px solid var(--bg-highlight);
+            border-radius: 4px;
+            padding: 16px;
+        }
+
+        .results__stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .results__stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .results__share {
+            background: var(--bg-primary);
+            border: 1px solid var(--bg-highlight);
+            border-radius: 4px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+
+        .results__share-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .results__share-text {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: color 0.15s;
+        }
+
+        .results__share-text:hover {
+            color: var(--cyan);
+        }
+
+        .results__copied {
+            color: var(--green);
+            font-size: 0.75rem;
+            margin-top: 8px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .results__copied.show {
+            opacity: 1;
+        }
+
+        .results__actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+        }
+
+        /* History Panel */
+        .history {
+            margin-top: 24px;
+            width: 100%;
+        }
+
+        .history__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .history__title {
+            color: var(--cyan);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .history__list {
+            background: var(--bg-secondary);
+            border: 1px solid var(--bg-highlight);
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .history__item {
+            display: grid;
+            grid-template-columns: 1fr auto auto auto;
+            gap: 16px;
+            padding: 10px 16px;
+            font-size: 0.8rem;
+            border-bottom: 1px solid var(--bg-highlight);
+            align-items: center;
+        }
+
+        .history__item:last-child {
+            border-bottom: none;
+        }
+
+        .history__date {
+            color: var(--text-muted);
+        }
+
+        .history__wpm {
+            color: var(--amber);
+            font-weight: 600;
+        }
+
+        .history__accuracy {
+            color: var(--green);
+        }
+
+        .history__time {
+            color: var(--text-secondary);
+        }
+
+        .history__empty {
+            padding: 24px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* Screen States */
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* Mobile Note */
+        .mobile-note {
+            display: none;
+            text-align: center;
+            padding: 16px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 600px) {
+            .mobile-note {
+                display: block;
+            }
+
+            .stats-bar {
+                grid-template-columns: 1fr;
+            }
+
+            .results__stats {
+                grid-template-columns: 1fr;
+            }
+
+            .results__actions {
+                flex-direction: column;
+            }
+
+            .history__item {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-highlight);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header__brand">
+            <a href="index.html" class="header__back">
+                <span>&larr;</span>
+                <span>back</span>
+            </a>
+            <span class="header__title">// TYPE_RACER</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <div class="header__best">
+                BEST: <span id="bestWpm">--</span> WPM
+            </div>
+            <a href="index.html" class="close-btn" title="Exit to main site">
+                <span>X</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="container">
+        <div class="game-box">
+            <div class="game-box__header">
+                <span class="game-box__file">race.exe</span>
+                <span class="game-box__status" id="gameStatus">READY</span>
+            </div>
+            <div class="game-box__content">
+                <!-- Start Screen -->
+                <div id="startScreen" class="screen active">
+                    <div class="start-screen">
+                        <pre class="start-screen__ascii">
+╔════════════════════════════════════════╗
+║  ▀█▀ █▄█ █▀█ █▀▀   █▀█ █▀█ █▀▀ █▀▀ █▀█ ║
+║   █   █  █▀▀ ██▄   █▀▄ █▀█ █▄▄ ██▄ █▀▄ ║
+╚════════════════════════════════════════╝
+                        </pre>
+                        <h1 class="start-screen__title">Test Your Typing Speed</h1>
+                        <p class="start-screen__subtitle">Type programming quotes as fast as you can. Your WPM and accuracy are tracked locally.</p>
+                        <button class="btn" id="startBtn">BEGIN RACE</button>
+                        <p class="mobile-note">Best experienced on desktop with a physical keyboard</p>
+                    </div>
+                </div>
+
+                <!-- Countdown Screen -->
+                <div id="countdownScreen" class="screen">
+                    <div class="countdown">
+                        <div class="countdown__number" id="countdownNumber">3</div>
+                        <p class="countdown__text">Get ready to type...</p>
+                    </div>
+                </div>
+
+                <!-- Race Screen -->
+                <div id="raceScreen" class="screen">
+                    <!-- Race Track -->
+                    <div class="race-track">
+                        <div class="race-track__labels">
+                            <span>START</span>
+                            <span>FINISH</span>
+                        </div>
+                        <div class="race-track__bar">
+                            <div class="race-track__progress" id="raceProgress"></div>
+                            <span class="race-track__car" id="raceCar">[>>>]</span>
+                            <span class="race-track__finish">[FLAG]</span>
+                        </div>
+                    </div>
+
+                    <!-- Stats Bar -->
+                    <div class="stats-bar">
+                        <div class="stat">
+                            <div class="stat__label">WPM</div>
+                            <div class="stat__value stat__value--wpm" id="liveWpm">0</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat__label">Time Left</div>
+                            <div class="stat__value stat__value--time" id="liveTime">1:00</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat__label">Accuracy</div>
+                            <div class="stat__value stat__value--accuracy" id="liveAccuracy">100%</div>
+                        </div>
+                    </div>
+
+                    <!-- Quote Display -->
+                    <div class="quote-display">
+                        <div class="quote-display__text" id="quoteText"></div>
+                        <div class="quote-display__author" id="quoteAuthor"></div>
+                    </div>
+
+                    <!-- Hidden Input for mobile keyboards -->
+                    <input type="text" class="hidden-input" id="hiddenInput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                </div>
+
+                <!-- Results Screen -->
+                <div id="resultsScreen" class="screen">
+                    <div class="results">
+                        <div class="results__new-best" id="newBestBadge" style="display: none;">NEW PERSONAL BEST!</div>
+                        <h2 class="results__title">RACE COMPLETE</h2>
+                        <p class="results__subtitle">Here's how you did</p>
+
+                        <div class="results__stats">
+                            <div class="results__stat">
+                                <div class="results__stat-label">Words Per Minute</div>
+                                <div class="results__stat-value stat__value--wpm" id="finalWpm">0</div>
+                            </div>
+                            <div class="results__stat">
+                                <div class="results__stat-label">Accuracy</div>
+                                <div class="results__stat-value stat__value--accuracy" id="finalAccuracy">0%</div>
+                            </div>
+                            <div class="results__stat">
+                                <div class="results__stat-label">Time</div>
+                                <div class="results__stat-value stat__value--time" id="finalTime">0s</div>
+                            </div>
+                            <div class="results__stat">
+                                <div class="results__stat-label">Characters</div>
+                                <div class="results__stat-value" id="finalChars">0/0</div>
+                            </div>
+                        </div>
+
+                        <div class="results__share">
+                            <div class="results__share-label">Click to copy</div>
+                            <div class="results__share-text" id="shareText">I typed at 0 WPM on camcasperson.com/typeracer</div>
+                            <div class="results__copied" id="copiedMsg">Copied to clipboard!</div>
+                        </div>
+
+                        <div class="results__actions">
+                            <button class="btn" id="playAgainBtn">RACE AGAIN</button>
+                            <button class="btn btn--secondary" id="viewHistoryBtn">VIEW HISTORY</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Panel -->
+        <div class="history" id="historyPanel">
+            <div class="history__header">
+                <span class="history__title">Race History</span>
+            </div>
+            <div class="history__list" id="historyList">
+                <div class="history__empty">No races yet. Start your first race!</div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════════════
+        // PASSAGES LIBRARY (60-second typing passages, ~150-200 words each)
+        // ═══════════════════════════════════════════════════════════════════
+        const QUOTES = [
+            {
+                text: "Any fool can write code that a computer can understand. Good programmers write code that humans can understand. This principle guides every decision we make when building software. Clean code reads like well-written prose. It tells a story that other developers can follow without getting lost in complexity. When you write code, imagine that the next person to read it will be a tired developer at three in the morning trying to fix a critical bug. That person might be you. Make their life easier by choosing clear variable names, writing small focused functions, and avoiding clever tricks that obscure your intent. The best code is not the code that shows off your skills, but the code that gets out of the way and lets the solution shine through.",
+                author: "On Clean Code"
+            },
+            {
+                text: "First, solve the problem. Then, write the code. This sequence matters more than most developers realize. Too often we rush to the keyboard before we truly understand what we are building. We start typing and let the code guide our thinking instead of the other way around. This leads to tangled solutions that technically work but miss the point entirely. Take time to think before you type. Sketch on paper. Talk through the problem out loud. Ask questions until the requirements become crystal clear. Only when you can explain the solution in plain English should you translate it into code. The time you invest in understanding will save you hours of debugging and rewriting later.",
+                author: "On Problem Solving"
+            },
+            {
+                text: "The best error message is the one that never shows up. This wisdom applies beyond just error handling. The best bug is the one that never gets written. The best meeting is the one that never needs to happen because the documentation is clear. The best customer support ticket is the one that never gets filed because the interface is intuitive. Prevention beats cure in software just like in medicine. Invest your energy in designing systems that guide users toward success rather than catching them when they fail. Build guardrails, not safety nets. Make the right path the easy path. When errors do occur, make them helpful and specific. Tell users what went wrong and how to fix it.",
+                author: "On Error Prevention"
+            },
+            {
+                text: "Code is like humor. When you have to explain it, it is bad. Self-documenting code is not a myth but a discipline. Every function name is an opportunity to communicate intent. Every variable tells a story about the data it holds. Comments should explain why, not what. If you find yourself writing a comment to explain what a block of code does, that is a signal to refactor. Extract that logic into a well-named function. Break complex conditions into named boolean variables. Transform magic numbers into named constants. The goal is code that reads naturally from top to bottom, where each line follows logically from the last. When someone new joins your team, they should be able to understand your codebase by reading it, not by asking you.",
+                author: "On Readable Code"
+            },
+            {
+                text: "Make it work, make it right, make it fast. This sequence is not optional. Skipping straight to optimization is a trap that catches even experienced developers. Premature optimization wastes time solving problems that might not exist. First get something working. Anything. Even if it is ugly and slow, a working solution teaches you things that speculation cannot. Then make it right. Refactor the ugly parts. Add tests. Clean up the structure. Only after the code is correct and maintainable should you think about performance. Measure first. Find the actual bottlenecks instead of guessing. You will often discover that the slow parts are not where you expected. Optimize only what matters.",
+                author: "On Development Process"
+            },
+            {
+                text: "Clean code always looks like it was written by someone who cares. This is the difference between a professional and an amateur. Professionals take pride in their craft. They do not leave messes for others to clean up. They do not take shortcuts that create technical debt. They treat the codebase as a shared resource that everyone must maintain. Caring shows in the small details. Consistent formatting. Thoughtful naming. Comprehensive tests. Clear commit messages. These things take extra time in the moment but pay dividends forever. When you inherit code written by someone who cared, you feel grateful. When you inherit code written by someone who did not, you feel frustrated. Be the developer who writes code that makes others grateful.",
+                author: "On Professionalism"
+            },
+            {
+                text: "Programming is not about typing, it is about thinking. The keyboard is just a tool for recording your thoughts. The real work happens in your head before your fingers ever touch the keys. Great programmers spend more time reading and thinking than writing. They study the existing code. They trace through the logic. They consider edge cases and failure modes. They evaluate multiple approaches before committing to one. When they finally start typing, the code flows quickly because the hard decisions are already made. If you find yourself typing and deleting repeatedly, stop. Step away from the computer. Think through the problem more carefully. Return when you know exactly what you want to write.",
+                author: "On Thinking First"
+            },
+            {
+                text: "The most dangerous phrase in the language is: We have always done it this way. Technology evolves rapidly and yesterday's best practices become tomorrow's antipatterns. Staying curious is not optional in this field. The frameworks you learned five years ago may be obsolete today. The patterns you mastered might have better alternatives now. This does not mean chasing every new trend. It means maintaining a learning mindset. Question your assumptions regularly. When someone suggests a different approach, listen before defending the status quo. Evaluate new tools with an open mind. The developers who thrive long-term are the ones who keep learning throughout their careers. Comfort is the enemy of growth.",
+                author: "On Continuous Learning"
+            },
+            {
+                text: "Simplicity is the soul of efficiency. Complex solutions feel impressive but simple solutions actually work. Every line of code is a liability. It must be read, understood, tested, and maintained. More code means more bugs, more cognitive load, more things that can break. The junior developer adds code to solve problems. The senior developer removes code while solving the same problems. Challenge yourself to find the simplest solution that works. Delete unnecessary features. Combine redundant functions. Eliminate clever abstractions that do not earn their complexity. The code you do not write has no bugs. The features you do not build require no maintenance. Simplicity is not about doing less, it is about focusing on what matters.",
+                author: "On Simplicity"
+            },
+            {
+                text: "Before software can be reusable it first has to be usable. Abstraction is powerful but premature abstraction is dangerous. We dream of building flexible, general-purpose components that solve whole categories of problems. But flexibility has a cost. Generic code is harder to understand than specific code. Configuration options multiply complexity. Edge cases proliferate when you try to handle every possible use case. Start by solving the specific problem in front of you. Solve it well. Only when you encounter a second similar problem should you consider abstraction. By then you will understand the domain better. You will know which parts actually vary and which stay constant. Your abstraction will be grounded in reality, not speculation.",
+                author: "On Abstraction"
+            },
+            {
+                text: "Debugging is twice as hard as writing the code in the first place. Therefore, if you write code that is as clever as you can possibly make it, you are by definition not smart enough to debug it. This insight changes how you approach programming. Clever code is a trap. It feels satisfying to write something dense and tricky, but future you will pay the price. Write boring code. Write obvious code. Write code that a tired developer at midnight can understand and fix. Save your cleverness for the algorithms that truly require it. For everything else, prefer clarity over brevity. Prefer explicit over implicit. When you must do something complex, add comments explaining your reasoning. Your future self will thank you.",
+                author: "On Debugging"
+            },
+            {
+                text: "The function of good software is to make the complex appear simple. Users do not care about your elegant architecture or clever algorithms. They care about getting their job done. The best software disappears into the background. It does what users expect without making them think. It handles edge cases gracefully without bothering users with technical details. This requires tremendous effort behind the scenes. You must deeply understand your users and their goals. You must anticipate their mistakes and guide them back on track. You must hide complexity without removing capability. The result looks effortless, but that effortlessness is the product of countless small decisions made thoughtfully.",
+                author: "On User Experience"
+            },
+            {
+                text: "There are only two hard things in computer science: cache invalidation and naming things. This joke contains deep truth. Naming is hard because it requires understanding. You cannot name something well until you know exactly what it does and why it exists. A good name captures the essence of a concept in a few words. It helps readers build accurate mental models. It distinguishes similar things and groups related things. Bad names mislead and confuse. They force readers to examine the implementation to understand the abstraction. Spend time on names. Rename things when your understanding improves. A codebase with good names is a codebase that teaches itself to new developers. That is worth the investment.",
+                author: "On Naming"
+            },
+            {
+                text: "The best way to predict the future is to implement it. Software gives us unique power to shape reality. We do not have to wait for the world to change. We can write code that changes it. This is both a privilege and a responsibility. Every application we build influences how people work, communicate, and live. The features we choose to include and exclude shape user behavior. The defaults we set become the norm. With this power comes the obligation to think carefully about consequences. Build things that help people. Solve real problems. Create tools that empower rather than exploit. The future is not something that happens to us. It is something we build together, one commit at a time.",
+                author: "On Building the Future"
+            },
+            {
+                text: "Perfection is achieved not when there is nothing more to add, but when there is nothing left to take away. This principle from design applies perfectly to code. We instinctively add features, parameters, and options. Adding feels like progress. But subtraction is often the harder and more valuable work. Every addition increases complexity. Every option is a decision the user must make. Every feature is code that must be maintained. Review your work with a critical eye. What can be removed without losing value? What options can be eliminated by choosing sensible defaults? What features do users never actually use? The courage to remove is rare in software development. Cultivate it.",
+                author: "On Subtraction"
+            }
+        ];
+
+        // ═══════════════════════════════════════════════════════════════════
+        // GAME CONSTANTS
+        // ═══════════════════════════════════════════════════════════════════
+        const RACE_DURATION = 60; // 60 seconds
+
+        // ═══════════════════════════════════════════════════════════════════
+        // GAME STATE
+        // ═══════════════════════════════════════════════════════════════════
+        const state = {
+            status: 'idle', // idle, countdown, racing, finished
+            quote: null,
+            startTime: null,
+            currentIndex: 0,
+            charStates: [], // Track state of each character: null (not typed), true (correct), false (incorrect)
+            totalKeystrokes: 0, // Total keys pressed (for accuracy calculation)
+            timerInterval: null,
+            timeRemaining: RACE_DURATION
+        };
+
+        // ═══════════════════════════════════════════════════════════════════
+        // DOM ELEMENTS
+        // ═══════════════════════════════════════════════════════════════════
+        const elements = {
+            bestWpm: document.getElementById('bestWpm'),
+            gameStatus: document.getElementById('gameStatus'),
+            startScreen: document.getElementById('startScreen'),
+            countdownScreen: document.getElementById('countdownScreen'),
+            raceScreen: document.getElementById('raceScreen'),
+            resultsScreen: document.getElementById('resultsScreen'),
+            startBtn: document.getElementById('startBtn'),
+            countdownNumber: document.getElementById('countdownNumber'),
+            raceProgress: document.getElementById('raceProgress'),
+            raceCar: document.getElementById('raceCar'),
+            quoteText: document.getElementById('quoteText'),
+            quoteAuthor: document.getElementById('quoteAuthor'),
+            liveWpm: document.getElementById('liveWpm'),
+            liveTime: document.getElementById('liveTime'),
+            liveAccuracy: document.getElementById('liveAccuracy'),
+            hiddenInput: document.getElementById('hiddenInput'),
+            finalWpm: document.getElementById('finalWpm'),
+            finalAccuracy: document.getElementById('finalAccuracy'),
+            finalTime: document.getElementById('finalTime'),
+            finalChars: document.getElementById('finalChars'),
+            newBestBadge: document.getElementById('newBestBadge'),
+            shareText: document.getElementById('shareText'),
+            copiedMsg: document.getElementById('copiedMsg'),
+            playAgainBtn: document.getElementById('playAgainBtn'),
+            viewHistoryBtn: document.getElementById('viewHistoryBtn'),
+            historyPanel: document.getElementById('historyPanel'),
+            historyList: document.getElementById('historyList')
+        };
+
+        // ═══════════════════════════════════════════════════════════════════
+        // UTILITY FUNCTIONS
+        // ═══════════════════════════════════════════════════════════════════
+        function showScreen(screenId) {
+            ['startScreen', 'countdownScreen', 'raceScreen', 'resultsScreen'].forEach(id => {
+                elements[id].classList.remove('active');
+            });
+            elements[screenId].classList.add('active');
+        }
+
+        function getRandomQuote() {
+            return QUOTES[Math.floor(Math.random() * QUOTES.length)];
+        }
+
+        function getCorrectChars() {
+            // Count characters that are currently correct
+            return state.charStates.filter(s => s === true).length;
+        }
+
+        function calculateWPM() {
+            if (!state.startTime) return 0;
+            const correctChars = getCorrectChars();
+            if (correctChars === 0) return 0;
+
+            // Calculate based on elapsed time (capped at 60 seconds)
+            const elapsedMs = Date.now() - state.startTime;
+            const elapsedMinutes = Math.min(elapsedMs / 60000, 1); // Cap at 1 minute
+
+            if (elapsedMinutes === 0) return 0;
+            // Standard: 5 characters = 1 word
+            return Math.round((correctChars / 5) / elapsedMinutes);
+        }
+
+        function calculateAccuracy() {
+            if (state.totalKeystrokes === 0) return 100;
+            const correctChars = getCorrectChars();
+            return Math.round((correctChars / state.totalKeystrokes) * 100);
+        }
+
+        function formatTimeRemaining(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // LOCAL STORAGE
+        // ═══════════════════════════════════════════════════════════════════
+        function loadBestWPM() {
+            const best = localStorage.getItem('typeracer_best_wpm');
+            return best ? parseInt(best) : 0;
+        }
+
+        function saveBestWPM(wpm) {
+            localStorage.setItem('typeracer_best_wpm', wpm.toString());
+        }
+
+        function loadHistory() {
+            const history = localStorage.getItem('typeracer_history');
+            return history ? JSON.parse(history) : [];
+        }
+
+        function saveToHistory(result) {
+            const history = loadHistory();
+            history.unshift(result);
+            // Keep only last 20 races
+            if (history.length > 20) {
+                history.pop();
+            }
+            localStorage.setItem('typeracer_history', JSON.stringify(history));
+        }
+
+        function displayBestWPM() {
+            const best = loadBestWPM();
+            elements.bestWpm.textContent = best > 0 ? best : '--';
+        }
+
+        function displayHistory() {
+            const history = loadHistory();
+
+            if (history.length === 0) {
+                elements.historyList.innerHTML = '<div class="history__empty">No races yet. Start your first race!</div>';
+                return;
+            }
+
+            elements.historyList.innerHTML = history.map(race => {
+                const date = new Date(race.date);
+                const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                return `
+                    <div class="history__item">
+                        <span class="history__date">${dateStr}</span>
+                        <span class="history__wpm">${race.wpm} WPM</span>
+                        <span class="history__accuracy">${race.accuracy}%</span>
+                        <span class="history__time">${race.time.toFixed(1)}s</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // GAME LOGIC
+        // ═══════════════════════════════════════════════════════════════════
+        function startGame() {
+            state.status = 'countdown';
+            state.quote = getRandomQuote();
+            state.currentIndex = 0;
+            state.charStates = new Array(state.quote.text.length).fill(null);
+            state.totalKeystrokes = 0;
+            state.startTime = null;
+            state.timeRemaining = RACE_DURATION;
+
+            elements.gameStatus.textContent = 'STARTING...';
+            showScreen('countdownScreen');
+
+            // Countdown
+            let count = 3;
+            elements.countdownNumber.textContent = count;
+
+            const countdownInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    elements.countdownNumber.textContent = count;
+                    // Re-trigger animation
+                    elements.countdownNumber.style.animation = 'none';
+                    elements.countdownNumber.offsetHeight; // Trigger reflow
+                    elements.countdownNumber.style.animation = 'countPulse 1s ease-out';
+                } else {
+                    clearInterval(countdownInterval);
+                    beginRace();
+                }
+            }, 1000);
+        }
+
+        function beginRace() {
+            state.status = 'racing';
+            state.startTime = Date.now();
+            state.timeRemaining = RACE_DURATION;
+
+            elements.gameStatus.textContent = 'RACING...';
+            showScreen('raceScreen');
+
+            // Render quote
+            renderQuote();
+
+            // Focus hidden input for mobile
+            elements.hiddenInput.value = '';
+            elements.hiddenInput.focus();
+
+            // Start live timer (updates every 100ms)
+            state.timerInterval = setInterval(updateLiveStats, 100);
+        }
+
+        function renderQuote() {
+            const chars = state.quote.text.split('').map((char, index) => {
+                let className = 'char';
+                const charState = state.charStates[index];
+
+                if (charState === true) {
+                    className += ' char--correct';
+                } else if (charState === false) {
+                    className += ' char--incorrect';
+                } else if (index === state.currentIndex) {
+                    className += ' char--current';
+                } else {
+                    className += ' char--pending';
+                }
+                // Handle spaces
+                const displayChar = char === ' ' ? '&nbsp;' : char;
+                return `<span class="${className}" data-index="${index}">${displayChar}</span>`;
+            }).join('');
+
+            elements.quoteText.innerHTML = chars;
+            elements.quoteAuthor.textContent = `— ${state.quote.author}`;
+        }
+
+        function updateCharDisplay(index, charState) {
+            const charSpan = elements.quoteText.querySelector(`[data-index="${index}"]`);
+            if (charSpan) {
+                charSpan.classList.remove('char--current', 'char--pending', 'char--correct', 'char--incorrect');
+                if (charState === true) {
+                    charSpan.classList.add('char--correct');
+                } else if (charState === false) {
+                    charSpan.classList.add('char--incorrect');
+                } else {
+                    charSpan.classList.add('char--pending');
+                }
+            }
+        }
+
+        function updateCurrentCursor() {
+            // Remove current class from all chars
+            elements.quoteText.querySelectorAll('.char--current').forEach(el => {
+                el.classList.remove('char--current');
+            });
+
+            // Add current class to current index
+            const currentSpan = elements.quoteText.querySelector(`[data-index="${state.currentIndex}"]`);
+            if (currentSpan && state.charStates[state.currentIndex] === null) {
+                currentSpan.classList.add('char--current');
+            }
+        }
+
+        function updateRaceTrack() {
+            const progress = (state.currentIndex / state.quote.text.length) * 100;
+            elements.raceProgress.style.width = progress + '%';
+            elements.raceCar.style.left = `calc(${progress}% - 20px)`;
+        }
+
+        function updateLiveStats() {
+            if (state.status !== 'racing') return;
+
+            // Calculate time remaining
+            const elapsedSeconds = (Date.now() - state.startTime) / 1000;
+            state.timeRemaining = Math.max(0, RACE_DURATION - elapsedSeconds);
+
+            // Update display
+            elements.liveTime.textContent = formatTimeRemaining(Math.ceil(state.timeRemaining));
+            elements.liveWpm.textContent = calculateWPM();
+            elements.liveAccuracy.textContent = calculateAccuracy() + '%';
+
+            // Check if time is up
+            if (state.timeRemaining <= 0) {
+                endRace(true); // true = ended by timer
+            }
+        }
+
+        function handleKeyPress(e) {
+            if (state.status !== 'racing') return;
+
+            // Ignore modifier keys
+            if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+            const key = e.key;
+
+            // Handle backspace
+            if (key === 'Backspace') {
+                e.preventDefault();
+                if (state.currentIndex > 0) {
+                    state.currentIndex--;
+                    // Reset the character state to null (not typed)
+                    state.charStates[state.currentIndex] = null;
+                    updateCharDisplay(state.currentIndex, null);
+                    updateCurrentCursor();
+                    updateRaceTrack();
+                }
+                return;
+            }
+
+            // Ignore non-printable keys
+            if (key.length !== 1) return;
+
+            e.preventDefault();
+
+            // Don't allow typing past the end
+            if (state.currentIndex >= state.quote.text.length) return;
+
+            const expectedChar = state.quote.text[state.currentIndex];
+            state.totalKeystrokes++;
+
+            if (key === expectedChar) {
+                state.charStates[state.currentIndex] = true;
+                updateCharDisplay(state.currentIndex, true);
+            } else {
+                state.charStates[state.currentIndex] = false;
+                updateCharDisplay(state.currentIndex, false);
+            }
+
+            state.currentIndex++;
+            updateCurrentCursor();
+            updateRaceTrack();
+            updateLiveStats();
+
+            // Check if race is complete (typed all characters)
+            if (state.currentIndex >= state.quote.text.length) {
+                endRace(false); // false = completed the passage
+            }
+        }
+
+        function endRace(timedOut = false) {
+            state.status = 'finished';
+            clearInterval(state.timerInterval);
+
+            const elapsed = Math.min(Date.now() - state.startTime, RACE_DURATION * 1000);
+            const wpm = calculateWPM();
+            const accuracy = calculateAccuracy();
+            const timeSeconds = elapsed / 1000;
+            const correctChars = getCorrectChars();
+
+            elements.gameStatus.textContent = timedOut ? 'TIME UP' : 'COMPLETE';
+
+            // Check for new best
+            const currentBest = loadBestWPM();
+            const isNewBest = wpm > currentBest;
+
+            if (isNewBest && wpm > 0) {
+                saveBestWPM(wpm);
+                displayBestWPM();
+                elements.newBestBadge.style.display = 'inline-block';
+            } else {
+                elements.newBestBadge.style.display = 'none';
+            }
+
+            // Save to history
+            saveToHistory({
+                date: new Date().toISOString(),
+                wpm: wpm,
+                accuracy: accuracy,
+                time: timeSeconds,
+                quote: state.quote.text.substring(0, 50) + '...'
+            });
+
+            // Update results screen
+            elements.finalWpm.textContent = wpm;
+            elements.finalAccuracy.textContent = accuracy + '%';
+            elements.finalTime.textContent = timeSeconds.toFixed(1) + 's';
+            elements.finalChars.textContent = `${correctChars}/${state.quote.text.length}`;
+            elements.shareText.textContent = `I typed at ${wpm} WPM with ${accuracy}% accuracy on camcasperson.com/typeracer`;
+
+            showScreen('resultsScreen');
+            displayHistory();
+        }
+
+        function copyShareText() {
+            navigator.clipboard.writeText(elements.shareText.textContent).then(() => {
+                elements.copiedMsg.classList.add('show');
+                setTimeout(() => {
+                    elements.copiedMsg.classList.remove('show');
+                }, 2000);
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = elements.shareText.textContent;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                elements.copiedMsg.classList.add('show');
+                setTimeout(() => {
+                    elements.copiedMsg.classList.remove('show');
+                }, 2000);
+            });
+        }
+
+        function resetGame() {
+            state.status = 'idle';
+            elements.gameStatus.textContent = 'READY';
+            elements.raceProgress.style.width = '0%';
+            elements.raceCar.style.left = '0%';
+            showScreen('startScreen');
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // EVENT LISTENERS
+        // ═══════════════════════════════════════════════════════════════════
+        elements.startBtn.addEventListener('click', startGame);
+        elements.playAgainBtn.addEventListener('click', () => {
+            resetGame();
+            startGame();
+        });
+        elements.viewHistoryBtn.addEventListener('click', () => {
+            elements.historyPanel.scrollIntoView({ behavior: 'smooth' });
+        });
+        elements.shareText.addEventListener('click', copyShareText);
+
+        // Global key handler (only when hidden input is not focused)
+        document.addEventListener('keydown', (e) => {
+            // Skip if hidden input is focused - let it handle its own events
+            if (document.activeElement === elements.hiddenInput) return;
+            handleKeyPress(e);
+        });
+
+        // Handle hidden input for mobile - character input
+        elements.hiddenInput.addEventListener('input', (e) => {
+            if (state.status !== 'racing') return;
+            const inputValue = e.target.value;
+            if (inputValue.length > 0) {
+                const lastChar = inputValue[inputValue.length - 1];
+
+                // Don't allow typing past the end
+                if (state.currentIndex >= state.quote.text.length) {
+                    elements.hiddenInput.value = '';
+                    return;
+                }
+
+                const expectedChar = state.quote.text[state.currentIndex];
+                state.totalKeystrokes++;
+
+                if (lastChar === expectedChar) {
+                    state.charStates[state.currentIndex] = true;
+                    updateCharDisplay(state.currentIndex, true);
+                } else {
+                    state.charStates[state.currentIndex] = false;
+                    updateCharDisplay(state.currentIndex, false);
+                }
+
+                state.currentIndex++;
+                updateCurrentCursor();
+                updateRaceTrack();
+                updateLiveStats();
+
+                if (state.currentIndex >= state.quote.text.length) {
+                    endRace(false);
+                }
+            }
+            elements.hiddenInput.value = '';
+        });
+
+        // Handle hidden input keydown for backspace and space
+        elements.hiddenInput.addEventListener('keydown', (e) => {
+            if (state.status !== 'racing') return;
+
+            if (e.key === 'Backspace') {
+                e.preventDefault();
+                if (state.currentIndex > 0) {
+                    state.currentIndex--;
+                    state.charStates[state.currentIndex] = null;
+                    updateCharDisplay(state.currentIndex, null);
+                    updateCurrentCursor();
+                    updateRaceTrack();
+                }
+                return;
+            }
+
+            // Handle space key directly (since input event may not capture it)
+            if (e.key === ' ') {
+                e.preventDefault();
+
+                // Don't allow typing past the end
+                if (state.currentIndex >= state.quote.text.length) return;
+
+                const expectedChar = state.quote.text[state.currentIndex];
+                state.totalKeystrokes++;
+
+                if (expectedChar === ' ') {
+                    state.charStates[state.currentIndex] = true;
+                    updateCharDisplay(state.currentIndex, true);
+                } else {
+                    state.charStates[state.currentIndex] = false;
+                    updateCharDisplay(state.currentIndex, false);
+                }
+
+                state.currentIndex++;
+                updateCurrentCursor();
+                updateRaceTrack();
+                updateLiveStats();
+
+                if (state.currentIndex >= state.quote.text.length) {
+                    endRace(false);
+                }
+            }
+        });
+
+        // Prevent space from scrolling page (when not in hidden input)
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && state.status === 'racing') {
+                e.preventDefault();
+            }
+        });
+
+        // Click anywhere on race screen to focus
+        elements.raceScreen.addEventListener('click', () => {
+            elements.hiddenInput.focus();
+        });
+
+        // ═══════════════════════════════════════════════════════════════════
+        // INITIALIZATION
+        // ═══════════════════════════════════════════════════════════════════
+        displayBestWPM();
+        displayHistory();
+    </script>
+</body>
+</html>

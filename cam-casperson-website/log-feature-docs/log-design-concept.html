@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOG // TERMINAL v3.7.1</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Core Palette */
+            --bg-void: #0a0d10;
+            --bg-primary: #161b22;
+            --bg-secondary: #1c2129;
+            --bg-tertiary: #22272e;
+            --bg-elevated: #2d333b;
+
+            /* Phosphor Colors */
+            --green: #39ff14;
+            --green-dim: #1a7a0a;
+            --green-glow: rgba(57, 255, 20, 0.4);
+            --green-ghost: rgba(57, 255, 20, 0.08);
+
+            --cyan: #22d3ee;
+            --cyan-dim: #0e5a65;
+            --cyan-glow: rgba(34, 211, 238, 0.4);
+
+            --amber: #ffbf00;
+            --amber-dim: #665200;
+            --amber-glow: rgba(255, 191, 0, 0.4);
+
+            --red: #ff3333;
+            --red-glow: rgba(255, 51, 51, 0.4);
+
+            /* Text */
+            --text-primary: #e6e6e6;
+            --text-secondary: #a0a0a0;
+            --text-muted: #606060;
+
+            /* Typography */
+            --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+            --font-display: 'Share Tech Mono', monospace;
+
+            /* Spacing */
+            --space-1: 4px;
+            --space-2: 8px;
+            --space-3: 12px;
+            --space-4: 16px;
+            --space-5: 24px;
+            --space-6: 32px;
+            --space-7: 48px;
+            --space-8: 64px;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: var(--font-mono);
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background: var(--bg-void);
+            position: relative;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           CRT SCREEN EFFECTS
+           ═══════════════════════════════════════════════════════════════ */
+
+        /* Scanlines */
+        .crt-overlay {
+            pointer-events: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0) 0px,
+                rgba(0, 0, 0, 0) 1px,
+                rgba(0, 0, 0, 0.15) 1px,
+                rgba(0, 0, 0, 0.15) 2px
+            );
+        }
+
+        /* Vignette */
+        .crt-vignette {
+            pointer-events: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9998;
+            background: radial-gradient(
+                ellipse at center,
+                transparent 0%,
+                transparent 60%,
+                rgba(0, 0, 0, 0.4) 100%
+            );
+        }
+
+        /* Screen flicker */
+        .crt-flicker {
+            pointer-events: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9997;
+            animation: flicker 0.15s infinite;
+            opacity: 0;
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 0.02; background: rgba(255, 255, 255, 0.02); }
+        }
+
+        /* Noise grain */
+        .crt-noise {
+            pointer-events: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9996;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           MAIN LAYOUT
+           ═══════════════════════════════════════════════════════════════ */
+
+        .terminal-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: var(--space-3);
+            gap: var(--space-3);
+            background:
+                linear-gradient(180deg, var(--bg-void) 0%, var(--bg-primary) 5%, var(--bg-primary) 95%, var(--bg-void) 100%);
+        }
+
+        /* Status Bar */
+        .status-bar {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-2) var(--space-4);
+            background: var(--bg-secondary);
+            border: 1px solid var(--bg-elevated);
+            font-size: 12px;
+            font-family: var(--font-display);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .status-bar__left {
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green-glow), 0 0 16px var(--green-glow);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-node {
+            color: var(--cyan);
+            text-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        .status-time {
+            color: var(--amber);
+            text-shadow: 0 0 10px var(--amber-glow);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Split Screen Container */
+        .split-screen {
+            flex: 1;
+            display: grid;
+            grid-template-rows: 1fr auto;
+            gap: var(--space-3);
+            min-height: 0;
+        }
+
+        /* Token panel compact mode */
+        .token-panel {
+            max-height: 200px;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           PANEL BASE STYLES
+           ═══════════════════════════════════════════════════════════════ */
+
+        .panel {
+            background: var(--bg-primary);
+            border: 1px solid var(--bg-elevated);
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Corner decorations */
+        .panel::before,
+        .panel::after {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-color: var(--green-dim);
+            border-style: solid;
+            z-index: 1;
+        }
+
+        .panel::before {
+            top: 0;
+            left: 0;
+            border-width: 2px 0 0 2px;
+        }
+
+        .panel::after {
+            bottom: 0;
+            right: 0;
+            border-width: 0 2px 2px 0;
+        }
+
+        .panel__header {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-3) var(--space-4);
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--bg-elevated);
+        }
+
+        .panel__title-group {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .panel__icon {
+            font-size: 16px;
+            color: var(--green);
+            text-shadow: 0 0 10px var(--green-glow);
+        }
+
+        .panel__title {
+            font-family: var(--font-display);
+            font-size: 14px;
+            font-weight: 400;
+            color: var(--green);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            text-shadow: 0 0 20px var(--green-glow);
+        }
+
+        .panel__path {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .panel__meta {
+            font-size: 11px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .panel__count {
+            color: var(--amber);
+            text-shadow: 0 0 8px var(--amber-glow);
+        }
+
+        .panel__content {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           JOURNAL LOG PANEL
+           ═══════════════════════════════════════════════════════════════ */
+
+        .journal-list {
+            height: 100%;
+            overflow-y: auto;
+            padding: var(--space-4);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-3);
+        }
+
+        /* Custom scrollbar */
+        .journal-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .journal-list::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        .journal-list::-webkit-scrollbar-thumb {
+            background: var(--bg-elevated);
+            border-radius: 4px;
+        }
+
+        .journal-list::-webkit-scrollbar-thumb:hover {
+            background: var(--green-dim);
+        }
+
+        .journal-entry {
+            padding: var(--space-4);
+            background: var(--bg-secondary);
+            border-left: 3px solid var(--green-dim);
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .journal-entry:hover {
+            border-left-color: var(--green);
+            background: var(--bg-tertiary);
+        }
+
+        .journal-entry::before {
+            content: '>';
+            position: absolute;
+            left: var(--space-4);
+            top: var(--space-4);
+            color: var(--green);
+            font-weight: 600;
+            text-shadow: 0 0 8px var(--green-glow);
+            opacity: 0;
+            transform: translateX(-10px);
+            transition: all 0.2s ease;
+        }
+
+        .journal-entry:hover::before {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .journal-entry:hover .entry__content {
+            padding-left: var(--space-5);
+        }
+
+        .entry__header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            margin-bottom: var(--space-2);
+        }
+
+        .entry__timestamp {
+            font-family: var(--font-display);
+            font-size: 12px;
+            color: var(--cyan);
+            text-shadow: 0 0 8px var(--cyan-glow);
+        }
+
+        .entry__id {
+            font-size: 10px;
+            color: var(--text-muted);
+            padding: 2px 6px;
+            background: var(--bg-elevated);
+            border-radius: 2px;
+        }
+
+        .entry__content {
+            color: var(--text-primary);
+            line-height: 1.7;
+            transition: padding-left 0.2s ease;
+        }
+
+        /* New Entry Button Area */
+        .journal-actions {
+            flex-shrink: 0;
+            padding: var(--space-3) var(--space-4);
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--bg-elevated);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           TOKEN TRACKER PANEL
+           ═══════════════════════════════════════════════════════════════ */
+
+        .token-panel .panel__header {
+            border-bottom-color: var(--cyan-dim);
+        }
+
+        .token-panel .panel__icon,
+        .token-panel .panel__title {
+            color: var(--cyan);
+            text-shadow: 0 0 20px var(--cyan-glow);
+        }
+
+        .token-panel::before,
+        .token-panel::after {
+            border-color: var(--cyan-dim);
+        }
+
+        .token-content {
+            height: 100%;
+            padding: var(--space-3);
+            display: flex;
+            gap: var(--space-4);
+            align-items: stretch;
+        }
+
+        /* Stats Overview */
+        .token-stats {
+            display: flex;
+            gap: var(--space-3);
+            flex-shrink: 0;
+        }
+
+        .stat-block {
+            padding: var(--space-3);
+            background: var(--bg-secondary);
+            border: 1px solid var(--bg-elevated);
+            min-width: 120px;
+        }
+
+        .stat-block__label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--text-muted);
+            margin-bottom: var(--space-1);
+        }
+
+        .stat-block__value {
+            font-family: var(--font-display);
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--amber);
+            text-shadow: 0 0 20px var(--amber-glow);
+            letter-spacing: 0.05em;
+        }
+
+        .stat-block__value--total {
+            font-size: 24px;
+        }
+
+        .stat-block__change {
+            font-size: 10px;
+            margin-top: var(--space-1);
+        }
+
+        .stat-block__change--up {
+            color: var(--green);
+        }
+
+        .stat-block__change--down {
+            color: var(--red);
+        }
+
+        /* ASCII Chart */
+        .token-chart {
+            background: var(--bg-secondary);
+            border: 1px solid var(--bg-elevated);
+            padding: var(--space-3);
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-2);
+            padding-bottom: var(--space-2);
+            border-bottom: 1px dashed var(--bg-elevated);
+        }
+
+        .chart-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+        }
+
+        .chart-toggle {
+            display: flex;
+            gap: var(--space-1);
+        }
+
+        .chart-toggle__btn {
+            padding: var(--space-1) var(--space-2);
+            background: transparent;
+            border: 1px solid var(--bg-elevated);
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .chart-toggle__btn:hover {
+            border-color: var(--cyan-dim);
+            color: var(--text-secondary);
+        }
+
+        .chart-toggle__btn.active {
+            background: var(--cyan-dim);
+            border-color: var(--cyan);
+            color: var(--cyan);
+        }
+
+        .chart-bars {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            font-family: var(--font-display);
+            overflow: hidden;
+        }
+
+        .chart-row {
+            display: grid;
+            grid-template-columns: 30px 1fr 60px;
+            gap: var(--space-2);
+            align-items: center;
+            font-size: 10px;
+        }
+
+        .chart-row__day {
+            color: var(--text-muted);
+            text-align: right;
+        }
+
+        .chart-row__bar {
+            height: 12px;
+            background: var(--bg-tertiary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-row__fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--cyan-dim) 0%, var(--cyan) 100%);
+            box-shadow: 0 0 10px var(--cyan-glow);
+            position: relative;
+            transition: width 0.5s ease;
+        }
+
+        /* Retro block pattern on bar */
+        .chart-row__fill::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent 0px,
+                transparent 8px,
+                rgba(0, 0, 0, 0.2) 8px,
+                rgba(0, 0, 0, 0.2) 10px
+            );
+        }
+
+        .chart-row__value {
+            color: var(--text-secondary);
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Token Entry Form */
+        .token-actions {
+            flex-shrink: 0;
+            padding: var(--space-3) var(--space-4);
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--bg-elevated);
+            display: flex;
+            gap: var(--space-3);
+            align-items: center;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           BUTTONS
+           ═══════════════════════════════════════════════════════════════ */
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-4);
+            background: transparent;
+            border: 1px solid var(--green);
+            color: var(--green);
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--green);
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+        .btn:hover {
+            box-shadow: 0 0 20px var(--green-glow), inset 0 0 20px var(--green-ghost);
+            text-shadow: 0 0 10px var(--green-glow);
+        }
+
+        .btn:hover::before {
+            opacity: 0.1;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn--secondary {
+            border-color: var(--cyan);
+            color: var(--cyan);
+        }
+
+        .btn--secondary:hover {
+            box-shadow: 0 0 20px var(--cyan-glow), inset 0 0 20px rgba(34, 211, 238, 0.08);
+            text-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        .btn--secondary::before {
+            background: var(--cyan);
+        }
+
+        .btn__icon {
+            font-size: 14px;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           PASSWORD MODAL
+           ═══════════════════════════════════════════════════════════════ */
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            width: 100%;
+            max-width: 480px;
+            background: var(--bg-primary);
+            border: 2px solid var(--green);
+            box-shadow:
+                0 0 40px var(--green-glow),
+                0 0 80px rgba(57, 255, 20, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transform: scale(0.9) translateY(20px);
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1) translateY(0);
+        }
+
+        /* Terminal-style modal header */
+        .modal__header {
+            padding: var(--space-3) var(--space-4);
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--green-dim);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal__title {
+            font-family: var(--font-display);
+            font-size: 14px;
+            color: var(--green);
+            text-shadow: 0 0 10px var(--green-glow);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .modal__title::before {
+            content: '⚠';
+        }
+
+        .modal__close {
+            width: 24px;
+            height: 24px;
+            background: transparent;
+            border: 1px solid var(--red);
+            color: var(--red);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+
+        .modal__close:hover {
+            background: var(--red);
+            color: var(--bg-primary);
+            box-shadow: 0 0 15px var(--red-glow);
+        }
+
+        .modal__body {
+            padding: var(--space-5);
+        }
+
+        /* ASCII Art Banner */
+        .modal__ascii {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            line-height: 1.2;
+            color: var(--green-dim);
+            text-align: center;
+            margin-bottom: var(--space-5);
+            white-space: pre;
+        }
+
+        .modal__prompt {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-4);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .modal__prompt::before {
+            content: '$';
+            color: var(--green);
+        }
+
+        /* Input Field */
+        .terminal-input-group {
+            position: relative;
+            margin-bottom: var(--space-4);
+        }
+
+        .terminal-input {
+            width: 100%;
+            padding: var(--space-3) var(--space-4);
+            background: var(--bg-void);
+            border: 1px solid var(--bg-elevated);
+            color: var(--green);
+            font-family: var(--font-mono);
+            font-size: 14px;
+            caret-color: var(--green);
+            transition: all 0.15s ease;
+        }
+
+        .terminal-input:focus {
+            outline: none;
+            border-color: var(--green);
+            box-shadow: 0 0 15px var(--green-ghost);
+        }
+
+        .terminal-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .input-cursor {
+            position: absolute;
+            right: var(--space-4);
+            top: 50%;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 16px;
+            background: var(--green);
+            animation: blink 1s step-end infinite;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .terminal-input:focus + .input-cursor {
+            opacity: 1;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .modal__error {
+            font-size: 12px;
+            color: var(--red);
+            text-shadow: 0 0 8px var(--red-glow);
+            margin-bottom: var(--space-4);
+            display: none;
+        }
+
+        .modal__error.visible {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .modal__error::before {
+            content: '✗';
+        }
+
+        .modal__success {
+            font-size: 12px;
+            color: var(--green);
+            text-shadow: 0 0 8px var(--green-glow);
+            margin-bottom: var(--space-4);
+            display: none;
+        }
+
+        .modal__success.visible {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .modal__success::before {
+            content: '✓';
+        }
+
+        .modal__actions {
+            display: flex;
+            gap: var(--space-3);
+        }
+
+        .modal__actions .btn {
+            flex: 1;
+        }
+
+        /* Entry Form (After Auth) */
+        .entry-form {
+            display: none;
+        }
+
+        .entry-form.active {
+            display: block;
+        }
+
+        .entry-form__textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: var(--space-4);
+            background: var(--bg-void);
+            border: 1px solid var(--bg-elevated);
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 14px;
+            line-height: 1.6;
+            resize: vertical;
+            margin-bottom: var(--space-4);
+        }
+
+        .entry-form__textarea:focus {
+            outline: none;
+            border-color: var(--green);
+            box-shadow: 0 0 15px var(--green-ghost);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           FOOTER
+           ═══════════════════════════════════════════════════════════════ */
+
+        .terminal-footer {
+            flex-shrink: 0;
+            padding: var(--space-2) var(--space-4);
+            background: var(--bg-secondary);
+            border: 1px solid var(--bg-elevated);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            font-size: 12px;
+        }
+
+        .footer-prompt {
+            color: var(--green);
+        }
+
+        .footer-path {
+            color: var(--cyan);
+        }
+
+        .footer-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 14px;
+            background: var(--green);
+            animation: blink 1s step-end infinite;
+            margin-left: var(--space-1);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           BOOT SEQUENCE ANIMATION
+           ═══════════════════════════════════════════════════════════════ */
+
+        .boot-screen {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-void);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-display);
+            color: var(--green);
+            transition: opacity 0.5s ease;
+        }
+
+        .boot-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .boot-text {
+            font-size: 12px;
+            opacity: 0;
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        .boot-text:nth-child(1) { animation-delay: 0.1s; }
+        .boot-text:nth-child(2) { animation-delay: 0.3s; }
+        .boot-text:nth-child(3) { animation-delay: 0.5s; }
+        .boot-text:nth-child(4) { animation-delay: 0.7s; }
+        .boot-text:nth-child(5) { animation-delay: 0.9s; color: var(--amber); }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           RESPONSIVE
+           ═══════════════════════════════════════════════════════════════ */
+
+        @media (max-width: 900px) {
+            .token-content {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+            }
+
+            .token-stats {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .stat-block {
+                flex: 1;
+                min-width: 120px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .split-screen {
+                grid-template-rows: 1fr 1fr;
+            }
+
+            .panel__header {
+                flex-wrap: wrap;
+                gap: var(--space-2);
+            }
+
+            .chart-row {
+                grid-template-columns: 30px 1fr 50px;
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- CRT Effects -->
+    <div class="crt-overlay"></div>
+    <div class="crt-vignette"></div>
+    <div class="crt-flicker"></div>
+    <div class="crt-noise"></div>
+
+    <!-- Boot Sequence -->
+    <div class="boot-screen" id="bootScreen">
+        <div class="boot-text">INITIALIZING SYSTEM...</div>
+        <div class="boot-text">LOADING MEMORY BANKS...</div>
+        <div class="boot-text">MOUNTING /logs/journal.log</div>
+        <div class="boot-text">CALIBRATING TOKEN SENSORS...</div>
+        <div class="boot-text">SYSTEM READY_</div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="terminal-container">
+        <!-- Status Bar -->
+        <header class="status-bar">
+            <div class="status-bar__left">
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span>ONLINE</span>
+                </div>
+                <span class="status-node">NODE://cam-0x7F3</span>
+            </div>
+            <time class="status-time" id="clock">00:00:00</time>
+        </header>
+
+        <!-- Split Screen Panels -->
+        <main class="split-screen">
+            <!-- JOURNAL LOG PANEL -->
+            <section class="panel journal-panel">
+                <div class="panel__header">
+                    <div class="panel__title-group">
+                        <span class="panel__icon">📋</span>
+                        <h2 class="panel__title">TRANSMISSION LOG</h2>
+                        <span class="panel__path">~/logs/journal.log</span>
+                    </div>
+                    <div class="panel__meta">
+                        <span class="panel__count" id="entryCount">4 entries</span>
+                        <span>|</span>
+                        <span>READONLY</span>
+                    </div>
+                </div>
+                <div class="panel__content">
+                    <div class="journal-list" id="journalList">
+                        <!-- Entries populated by JS -->
+                    </div>
+                </div>
+                <div class="journal-actions">
+                    <button class="btn" id="newEntryBtn">
+                        <span class="btn__icon">+</span>
+                        <span>NEW TRANSMISSION</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- TOKEN TRACKER PANEL -->
+            <section class="panel token-panel">
+                <div class="panel__header">
+                    <div class="panel__title-group">
+                        <span class="panel__icon">📊</span>
+                        <h2 class="panel__title">TOKEN METRICS</h2>
+                        <span class="panel__path">~/stats/tokens.yaml</span>
+                    </div>
+                    <div class="panel__meta">
+                        <span>LAST SYNC: <span id="lastSync">2 min ago</span></span>
+                    </div>
+                </div>
+                <div class="panel__content">
+                    <div class="token-content">
+                        <div class="token-stats">
+                            <div class="stat-block">
+                                <div class="stat-block__label">Total Tokens</div>
+                                <div class="stat-block__value stat-block__value--total" id="totalTokens">1,847,293</div>
+                                <div class="stat-block__change stat-block__change--up">↑ 12.4% from last month</div>
+                            </div>
+                            <div class="stat-block">
+                                <div class="stat-block__label">This Week</div>
+                                <div class="stat-block__value" id="weeklyTokens">287,456</div>
+                            </div>
+                            <div class="stat-block">
+                                <div class="stat-block__label">Today</div>
+                                <div class="stat-block__value" id="dailyTokens">42,891</div>
+                            </div>
+                        </div>
+                        <div class="token-chart">
+                            <div class="chart-header">
+                                <span class="chart-title">7-Day Activity</span>
+                                <div class="chart-toggle">
+                                    <button class="chart-toggle__btn active" data-view="daily">DAILY</button>
+                                    <button class="chart-toggle__btn" data-view="weekly">WEEKLY</button>
+                                </div>
+                            </div>
+                            <div class="chart-bars" id="chartBars">
+                                <!-- Chart rows populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="token-actions">
+                    <button class="btn btn--secondary" id="addTokenBtn">
+                        <span class="btn__icon">↳</span>
+                        <span>LOG TOKENS</span>
+                    </button>
+                    <button class="btn btn--secondary" id="refreshBtn">
+                        <span class="btn__icon">⟳</span>
+                        <span>REFRESH</span>
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="terminal-footer">
+            <span class="footer-prompt">visitor@camcasperson</span>
+            <span class="footer-path">~/log</span>
+            <span class="footer-cursor"></span>
+        </footer>
+    </div>
+
+    <!-- Password Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal__header">
+                <h3 class="modal__title">AUTHENTICATION REQUIRED</h3>
+                <button class="modal__close" id="modalClose">×</button>
+            </div>
+            <div class="modal__body">
+                <pre class="modal__ascii">
+╔═══════════════════════════════════════╗
+║   █████╗  ██████╗ ██████╗███████╗███████╗███████╗ ║
+║  ██╔══██╗██╔════╝██╔════╝██╔════╝██╔════╝██╔════╝ ║
+║  ███████║██║     ██║     █████╗  ███████╗███████╗ ║
+║  ██╔══██║██║     ██║     ██╔══╝  ╚════██║╚════██║ ║
+║  ██║  ██║╚██████╗╚██████╗███████╗███████║███████║ ║
+║  ╚═╝  ╚═╝ ╚═════╝ ╚═════╝╚══════╝╚══════╝╚══════╝ ║
+╚═══════════════════════════════════════╝
+                </pre>
+
+                <!-- Password Form -->
+                <div id="authForm">
+                    <p class="modal__prompt">Enter authorization code to proceed</p>
+                    <div class="terminal-input-group">
+                        <input type="password" class="terminal-input" id="passwordInput" placeholder="••••••••" autocomplete="off">
+                        <span class="input-cursor"></span>
+                    </div>
+                    <div class="modal__error" id="authError">ACCESS DENIED - Invalid credentials</div>
+                    <div class="modal__success" id="authSuccess">ACCESS GRANTED - Welcome back, Commander</div>
+                    <div class="modal__actions">
+                        <button class="btn" id="authSubmit">AUTHENTICATE</button>
+                    </div>
+                </div>
+
+                <!-- Entry Form (shown after auth) -->
+                <div class="entry-form" id="entryForm">
+                    <p class="modal__prompt">Compose your transmission</p>
+                    <textarea class="entry-form__textarea" id="entryContent" placeholder="Begin transmission..."></textarea>
+                    <div class="modal__actions">
+                        <button class="btn" id="submitEntry">TRANSMIT</button>
+                        <button class="btn btn--secondary" id="cancelEntry">ABORT</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════════
+        // MOCK DATA (Replace with API calls in production)
+        // ═══════════════════════════════════════════════════════════════
+
+        const MOCK_JOURNAL_ENTRIES = [];
+
+        const MOCK_TOKEN_DATA = {
+            total: 1847293,
+            weekly: 287456,
+            daily: 42891,
+            history: [
+                { date: '2026-01-04', day: 'Sat', tokens: 28340 },
+                { date: '2026-01-05', day: 'Sun', tokens: 15230 },
+                { date: '2026-01-06', day: 'Mon', tokens: 52180 },
+                { date: '2026-01-07', day: 'Tue', tokens: 41560 },
+                { date: '2026-01-08', day: 'Wed', tokens: 38920 },
+                { date: '2026-01-09', day: 'Thu', tokens: 68335 },
+                { date: '2026-01-10', day: 'Fri', tokens: 42891 }
+            ]
+        };
+
+        // ═══════════════════════════════════════════════════════════════
+        // DOM ELEMENTS
+        // ═══════════════════════════════════════════════════════════════
+
+        const elements = {
+            bootScreen: document.getElementById('bootScreen'),
+            clock: document.getElementById('clock'),
+            journalList: document.getElementById('journalList'),
+            entryCount: document.getElementById('entryCount'),
+            newEntryBtn: document.getElementById('newEntryBtn'),
+            totalTokens: document.getElementById('totalTokens'),
+            weeklyTokens: document.getElementById('weeklyTokens'),
+            dailyTokens: document.getElementById('dailyTokens'),
+            chartBars: document.getElementById('chartBars'),
+            modalOverlay: document.getElementById('modalOverlay'),
+            modalClose: document.getElementById('modalClose'),
+            authForm: document.getElementById('authForm'),
+            entryForm: document.getElementById('entryForm'),
+            passwordInput: document.getElementById('passwordInput'),
+            authSubmit: document.getElementById('authSubmit'),
+            authError: document.getElementById('authError'),
+            authSuccess: document.getElementById('authSuccess'),
+            entryContent: document.getElementById('entryContent'),
+            submitEntry: document.getElementById('submitEntry'),
+            cancelEntry: document.getElementById('cancelEntry'),
+            addTokenBtn: document.getElementById('addTokenBtn'),
+            refreshBtn: document.getElementById('refreshBtn')
+        };
+
+        // ═══════════════════════════════════════════════════════════════
+        // STATE
+        // ═══════════════════════════════════════════════════════════════
+
+        const state = {
+            journalEntries: MOCK_JOURNAL_ENTRIES,
+            tokenData: MOCK_TOKEN_DATA,
+            isAuthenticated: false,
+            currentModal: null // 'journal' or 'token'
+        };
+
+        // ═══════════════════════════════════════════════════════════════
+        // UTILITIES
+        // ═══════════════════════════════════════════════════════════════
+
+        function formatNumber(num) {
+            return num.toLocaleString();
+        }
+
+        function formatDate(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // CLOCK
+        // ═══════════════════════════════════════════════════════════════
+
+        function updateClock() {
+            const now = new Date();
+            const time = now.toLocaleTimeString('en-US', { hour12: false });
+            elements.clock.textContent = time;
+        }
+
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // ═══════════════════════════════════════════════════════════════
+        // BOOT SEQUENCE
+        // ═══════════════════════════════════════════════════════════════
+
+        function runBootSequence() {
+            setTimeout(() => {
+                elements.bootScreen.classList.add('hidden');
+            }, 1800);
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // JOURNAL RENDERING
+        // ═══════════════════════════════════════════════════════════════
+
+        function renderJournalEntries() {
+            const entries = state.journalEntries;
+            elements.entryCount.textContent = `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}`;
+
+            if (entries.length === 0) {
+                elements.journalList.innerHTML = `
+                    <div style="color: var(--text-muted); text-align: center; padding: var(--space-8); font-style: italic;">
+                        <div style="font-size: 24px; margin-bottom: var(--space-2);">_</div>
+                        <div>No transmissions logged.</div>
+                        <div style="margin-top: var(--space-2); font-size: 12px;">Click "+ NEW TRANSMISSION" to begin.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            elements.journalList.innerHTML = entries.map(entry => `
+                <article class="journal-entry">
+                    <div class="entry__header">
+                        <time class="entry__timestamp">${formatDate(entry.timestamp)}</time>
+                        <span class="entry__id">${entry.id}</span>
+                    </div>
+                    <div class="entry__content">${escapeHtml(entry.content)}</div>
+                </article>
+            `).join('');
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // TOKEN CHART RENDERING
+        // ═══════════════════════════════════════════════════════════════
+
+        function renderTokenChart() {
+            const { history, total, weekly, daily } = state.tokenData;
+
+            elements.totalTokens.textContent = formatNumber(total);
+            elements.weeklyTokens.textContent = formatNumber(weekly);
+            elements.dailyTokens.textContent = formatNumber(daily);
+
+            const maxTokens = Math.max(...history.map(d => d.tokens));
+
+            elements.chartBars.innerHTML = history.map(item => {
+                const percentage = (item.tokens / maxTokens) * 100;
+                return `
+                    <div class="chart-row">
+                        <span class="chart-row__day">${item.day}</span>
+                        <div class="chart-row__bar">
+                            <div class="chart-row__fill" style="width: ${percentage}%"></div>
+                        </div>
+                        <span class="chart-row__value">${formatNumber(item.tokens)}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // MODAL HANDLING
+        // ═══════════════════════════════════════════════════════════════
+
+        function openModal(type) {
+            state.currentModal = type;
+            elements.modalOverlay.classList.add('active');
+            elements.authForm.style.display = 'block';
+            elements.entryForm.classList.remove('active');
+            elements.authError.classList.remove('visible');
+            elements.authSuccess.classList.remove('visible');
+            elements.passwordInput.value = '';
+            elements.passwordInput.focus();
+        }
+
+        function closeModal() {
+            elements.modalOverlay.classList.remove('active');
+            state.isAuthenticated = false;
+            state.currentModal = null;
+        }
+
+        function handleAuth() {
+            const password = elements.passwordInput.value;
+
+            // In production, this would call Google Apps Script backend
+            // Demo password: 1524
+            if (password === '1524') {
+                elements.authError.classList.remove('visible');
+                elements.authSuccess.classList.add('visible');
+                state.isAuthenticated = true;
+
+                setTimeout(() => {
+                    if (state.currentModal === 'journal') {
+                        elements.authForm.style.display = 'none';
+                        elements.entryForm.classList.add('active');
+                        elements.entryContent.focus();
+                    } else {
+                        // Token entry would open a different form
+                        closeModal();
+                        alert('Token entry form would appear here');
+                    }
+                }, 800);
+            } else {
+                elements.authError.classList.add('visible');
+                elements.authSuccess.classList.remove('visible');
+                elements.passwordInput.select();
+            }
+        }
+
+        function submitJournalEntry() {
+            const content = elements.entryContent.value.trim();
+            if (!content) return;
+
+            const newEntry = {
+                id: `LOG-${String(state.journalEntries.length + 1).padStart(4, '0')}`,
+                timestamp: new Date().toISOString(),
+                content: content
+            };
+
+            // In production, this would POST to Google Apps Script
+            state.journalEntries.unshift(newEntry);
+            renderJournalEntries();
+            closeModal();
+            elements.entryContent.value = '';
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // EVENT LISTENERS
+        // ═══════════════════════════════════════════════════════════════
+
+        elements.newEntryBtn.addEventListener('click', () => openModal('journal'));
+        elements.addTokenBtn.addEventListener('click', () => openModal('token'));
+        elements.modalClose.addEventListener('click', closeModal);
+        elements.cancelEntry.addEventListener('click', closeModal);
+
+        elements.modalOverlay.addEventListener('click', (e) => {
+            if (e.target === elements.modalOverlay) closeModal();
+        });
+
+        elements.authSubmit.addEventListener('click', handleAuth);
+        elements.passwordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleAuth();
+        });
+
+        elements.submitEntry.addEventListener('click', submitJournalEntry);
+
+        elements.refreshBtn.addEventListener('click', () => {
+            // In production, this would fetch fresh data
+            renderTokenChart();
+        });
+
+        // Chart toggle buttons
+        document.querySelectorAll('.chart-toggle__btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.chart-toggle__btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                // Would switch between daily/weekly views
+            });
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // ═══════════════════════════════════════════════════════════════
+        // INITIALIZATION
+        // ═══════════════════════════════════════════════════════════════
+
+        function init() {
+            runBootSequence();
+            renderJournalEntries();
+            renderTokenChart();
+        }
+
+        init();
+    </script>
+</body>
+</html>

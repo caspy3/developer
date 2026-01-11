@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<!--
+    ═══════════════════════════════════════════════════════════════════
+    TERMINAL LANDING PAGE - Cam Casperson
+    ═══════════════════════════════════════════════════════════════════
+
+    PRIMARY GOALS:
+    1. Showcase portfolio - demonstrate skills and completed work
+    2. Establish credibility - build trust with potential clients/employers
+
+    DESIGN DECISIONS:
+    - Dark navy theme (#161b22) for modern, tech-forward aesthetic
+    - High contrast text for readability
+    - Bright green (#39ff14) accents to highlight key information
+    - Terminal/code aesthetic to appeal to tech-savvy audience
+
+    ═══════════════════════════════════════════════════════════════════
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAM CASPERSON // TERMINAL</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Terminal Colors - Dark Navy Theme */
+            --bg-primary: #161b22;
+            --bg-secondary: #1c2129;
+            --bg-tertiary: #22272e;
+            --bg-highlight: #2d333b;
+
+            --text-primary: #f0f0f0;
+            --text-secondary: #a8a8a8;
+            --text-muted: #707070;
+
+            --green: #39ff14;
+            --green-dim: #1a7a0a;
+            --green-glow: rgba(57, 255, 20, 0.15);
+
+            --cyan: #22d3ee;
+            --cyan-dim: #0e5a66;
+
+            --amber: #ffbf00;
+            --red: #ff3333;
+
+            /* Typography */
+            --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+
+            /* Spacing */
+            --space-1: 4px;
+            --space-2: 8px;
+            --space-3: 12px;
+            --space-4: 16px;
+            --space-5: 24px;
+            --space-6: 32px;
+            --space-7: 48px;
+            --space-8: 64px;
+
+            /* Layout */
+            --max-width: 80ch;
+            --indent: 4ch;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 14px;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-mono);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            letter-spacing: -0.01em;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* CRT Scanline Effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.1) 2px,
+                rgba(0, 0, 0, 0.1) 4px
+            );
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* Subtle Vignette */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.4) 100%);
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        /* Selection */
+        ::selection {
+            background: var(--green);
+            color: var(--bg-primary);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           STATUS BAR
+        ═══════════════════════════════════════════════════════════════════ */
+        .status-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--bg-highlight);
+            padding: var(--space-2) var(--space-4);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-bar__node {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .status-bar__indicator {
+            width: 8px;
+            height: 8px;
+            background: var(--green);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--green), 0 0 20px var(--green-glow);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-bar__id {
+            color: var(--cyan);
+            text-transform: uppercase;
+        }
+
+        .status-bar__status {
+            color: var(--green);
+            font-weight: 600;
+        }
+
+        .status-bar__meta {
+            color: var(--text-muted);
+        }
+
+        .status-bar__time {
+            color: var(--text-secondary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           MAIN LAYOUT
+        ═══════════════════════════════════════════════════════════════════ */
+        .container {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            min-height: 100vh;
+            padding-top: 36px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           FILE TREE SIDEBAR
+        ═══════════════════════════════════════════════════════════════════ */
+        .sidebar {
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--bg-highlight);
+            padding: var(--space-5) 0;
+            position: sticky;
+            top: 36px;
+            height: calc(100vh - 36px);
+            overflow-y: auto;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+        }
+
+        .sidebar__header {
+            padding: 0 var(--space-4) var(--space-4);
+            border-bottom: 1px solid var(--bg-highlight);
+            margin-bottom: var(--space-4);
+        }
+
+        .sidebar__title {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .file-tree {
+            list-style: none;
+            font-size: 0.8rem;
+        }
+
+        .file-tree__item {
+            padding: var(--space-1) var(--space-4);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            transition: background 0.1s;
+            color: var(--text-secondary);
+        }
+
+        .file-tree__item:hover {
+            background: var(--bg-highlight);
+            color: var(--text-primary);
+        }
+
+        .file-tree__item.active {
+            background: var(--green-glow);
+            color: var(--green);
+        }
+
+        .file-tree__icon {
+            font-size: 0.9rem;
+            width: 1.2em;
+            text-align: center;
+        }
+
+        .file-tree__folder {
+            padding-left: calc(var(--space-4) + 1.4em);
+        }
+
+        .file-tree__nested {
+            padding-left: calc(var(--space-4) + 2.8em);
+        }
+
+        .file-tree__divider {
+            height: 1px;
+            background: var(--bg-highlight);
+            margin: var(--space-3) var(--space-4);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           MAIN CONTENT
+        ═══════════════════════════════════════════════════════════════════ */
+        .main {
+            padding: var(--space-6) var(--space-6) var(--space-8);
+            max-width: calc(var(--max-width) + var(--space-8));
+        }
+
+        @media (max-width: 768px) {
+            .main {
+                padding: var(--space-4);
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           ASCII ART HEADER
+        ═══════════════════════════════════════════════════════════════════ */
+        .ascii-header {
+            margin-bottom: var(--space-7);
+            position: relative;
+        }
+
+        .ascii-art {
+            font-size: 0.55rem;
+            line-height: 1.1;
+            color: var(--green);
+            white-space: pre;
+            overflow-x: auto;
+            text-shadow: 0 0 10px var(--green-glow), 0 0 20px var(--green-glow);
+            animation: flicker 4s infinite;
+        }
+
+        @keyframes flicker {
+            0%, 97%, 100% { opacity: 1; }
+            98% { opacity: 0.8; }
+            99% { opacity: 0.9; }
+        }
+
+        @media (max-width: 600px) {
+            .ascii-art {
+                font-size: 0.35rem;
+            }
+        }
+
+        .ascii-subtitle {
+            margin-top: var(--space-4);
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .ascii-subtitle span {
+            color: var(--cyan);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           SECTION STYLING
+        ═══════════════════════════════════════════════════════════════════ */
+        .section {
+            margin-bottom: var(--space-7);
+        }
+
+        .section__header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            margin-bottom: var(--space-4);
+            padding-bottom: var(--space-2);
+            border-bottom: 1px solid var(--bg-highlight);
+        }
+
+        .section__icon {
+            color: var(--cyan);
+        }
+
+        .section__title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--green);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .section__line {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, var(--bg-highlight), transparent);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           JSON-STYLE CONTENT
+        ═══════════════════════════════════════════════════════════════════ */
+        .json-block {
+            background: var(--bg-secondary);
+            border: 1px solid var(--bg-highlight);
+            border-radius: 4px;
+            padding: var(--space-4);
+            font-size: 0.85rem;
+        }
+
+        .json-block + .json-block {
+            margin-top: var(--space-3);
+        }
+
+        .json-key {
+            color: var(--cyan);
+        }
+
+        .json-string {
+            color: var(--green);
+        }
+
+        .json-number {
+            color: var(--amber);
+        }
+
+        .json-bracket {
+            color: var(--text-muted);
+        }
+
+        .json-line {
+            padding-left: var(--indent);
+        }
+
+        .json-comment {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           SKILLS / SERVICES GRID
+        ═══════════════════════════════════════════════════════════════════ */
+        .skills-grid {
+            display: grid;
+            gap: var(--space-3);
+        }
+
+        .skill-item {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-3);
+            padding: var(--space-3);
+            background: var(--bg-secondary);
+            border: 1px solid var(--bg-highlight);
+            border-radius: 4px;
+            transition: all 0.15s;
+        }
+
+        .skill-item:hover {
+            border-color: var(--green-dim);
+            background: var(--bg-tertiary);
+        }
+
+        .skill-item__arrow {
+            color: var(--cyan);
+            font-weight: 600;
+        }
+
+        .skill-item__name {
+            color: var(--green);
+            font-weight: 500;
+        }
+
+        .skill-item__desc {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            margin-top: var(--space-1);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           PROCESS / EXPERIENCE TIMELINE
+        ═══════════════════════════════════════════════════════════════════ */
+        .timeline {
+            position: relative;
+            padding-left: var(--space-5);
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 8px;
+            bottom: 8px;
+            width: 1px;
+            background: var(--bg-highlight);
+        }
+
+        .timeline__item {
+            position: relative;
+            padding-bottom: var(--space-5);
+        }
+
+        .timeline__item:last-child {
+            padding-bottom: 0;
+        }
+
+        .timeline__dot {
+            position: absolute;
+            left: calc(-1 * var(--space-5) + 2px);
+            top: 6px;
+            width: 9px;
+            height: 9px;
+            background: var(--bg-primary);
+            border: 2px solid var(--cyan);
+            border-radius: 50%;
+        }
+
+        .timeline__item:first-child .timeline__dot {
+            border-color: var(--green);
+            box-shadow: 0 0 8px var(--green-glow);
+        }
+
+        .timeline__year {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: var(--space-1);
+        }
+
+        .timeline__title {
+            color: var(--green);
+            font-weight: 500;
+            margin-bottom: var(--space-1);
+        }
+
+        .timeline__desc {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           CONTACT SECTION
+        ═══════════════════════════════════════════════════════════════════ */
+        .contact-grid {
+            display: grid;
+            gap: var(--space-2);
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            padding: var(--space-2) 0;
+        }
+
+        .contact-item__label {
+            color: var(--text-muted);
+            min-width: 12ch;
+        }
+
+        .contact-item__value {
+            color: var(--cyan);
+        }
+
+        .contact-item__value:hover {
+            color: var(--green);
+            text-decoration: underline;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           TERMINAL FOOTER
+        ═══════════════════════════════════════════════════════════════════ */
+        .terminal-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--bg-highlight);
+            padding: var(--space-3) var(--space-4);
+            font-size: 0.8rem;
+            z-index: 100;
+        }
+
+        .terminal-prompt {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .terminal-prompt__user {
+            color: var(--green);
+        }
+
+        .terminal-prompt__at {
+            color: var(--text-muted);
+        }
+
+        .terminal-prompt__host {
+            color: var(--cyan);
+        }
+
+        .terminal-prompt__path {
+            color: var(--text-secondary);
+        }
+
+        .terminal-prompt__symbol {
+            color: var(--green);
+        }
+
+        .terminal-prompt__cursor {
+            display: inline-block;
+            width: 8px;
+            height: 1.2em;
+            background: var(--green);
+            margin-left: var(--space-1);
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Mobile footer adjustment */
+        @media (max-width: 768px) {
+            .terminal-footer {
+                position: relative;
+                margin-top: var(--space-6);
+            }
+
+            .main {
+                padding-bottom: var(--space-4);
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           DECORATIVE ELEMENTS
+        ═══════════════════════════════════════════════════════════════════ */
+        .bracket-decor {
+            color: var(--text-muted);
+            opacity: 0.3;
+        }
+
+        .command-hint {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-1) var(--space-2);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--bg-highlight);
+            border-radius: 3px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .command-hint kbd {
+            background: var(--bg-highlight);
+            padding: 2px 6px;
+            border-radius: 2px;
+            color: var(--text-secondary);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           LINKS
+        ═══════════════════════════════════════════════════════════════════ */
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           SCROLLBAR
+        ═══════════════════════════════════════════════════════════════════ */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-highlight);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           UTILITY CLASSES
+        ═══════════════════════════════════════════════════════════════════ */
+        .text-green { color: var(--green); }
+        .text-cyan { color: var(--cyan); }
+        .text-amber { color: var(--amber); }
+        .text-muted { color: var(--text-muted); }
+        .text-secondary { color: var(--text-secondary); }
+
+        .mt-2 { margin-top: var(--space-2); }
+        .mt-4 { margin-top: var(--space-4); }
+        .mb-2 { margin-bottom: var(--space-2); }
+        .mb-4 { margin-bottom: var(--space-4); }
+
+        /* Bottom padding for fixed footer */
+        .main {
+            padding-bottom: 80px;
+        }
+
+        @media (max-width: 768px) {
+            .main {
+                padding-bottom: var(--space-4);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ═══════════════════════════════════════════════════════════════════
+         STATUS BAR
+    ═══════════════════════════════════════════════════════════════════ -->
+    <header class="status-bar">
+        <div class="status-bar__node">
+            <div class="status-bar__indicator"></div>
+            <span class="status-bar__id">NODE cam-0x7F3</span>
+            <span class="status-bar__status">STATUS: OPERATIONAL</span>
+        </div>
+        <div class="status-bar__meta">
+            <span class="status-bar__time" id="clock">00:00:00</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- ═══════════════════════════════════════════════════════════════════
+             FILE TREE SIDEBAR
+        ═══════════════════════════════════════════════════════════════════ -->
+        <aside class="sidebar">
+            <div class="sidebar__header">
+                <div class="sidebar__title">Explorer</div>
+            </div>
+            <nav>
+                <ul class="file-tree">
+                    <li class="file-tree__item active">
+                        <span class="file-tree__icon">~</span>
+                        <span>home</span>
+                    </li>
+                    <li class="file-tree__divider"></li>
+                    <li class="file-tree__item">
+                        <span class="file-tree__icon">&#128193;</span>
+                        <span>about</span>
+                    </li>
+                    <li class="file-tree__item file-tree__folder">
+                        <span class="file-tree__icon">&#128196;</span>
+                        <span>bio.json</span>
+                    </li>
+                    <li class="file-tree__item file-tree__folder">
+                        <span class="file-tree__icon">&#128196;</span>
+                        <span>experience.md</span>
+                    </li>
+                    <li class="file-tree__divider"></li>
+                    <li class="file-tree__item">
+                        <span class="file-tree__icon">&#128193;</span>
+                        <span>services</span>
+                    </li>
+                    <li class="file-tree__item file-tree__folder">
+                        <span class="file-tree__icon">&#128196;</span>
+                        <span>offerings.json</span>
+                    </li>
+                    <li class="file-tree__item file-tree__folder">
+                        <span class="file-tree__icon">&#128196;</span>
+                        <span>skills.yaml</span>
+                    </li>
+                    <li class="file-tree__divider"></li>
+                    <li class="file-tree__item">
+                        <span class="file-tree__icon">&#128193;</span>
+                        <span>projects</span>
+                    </li>
+                    <li class="file-tree__item file-tree__folder">
+                        <a href="typeracer.html" style="display: flex; align-items: center; gap: 8px; color: inherit; text-decoration: none;">
+                            <span class="file-tree__icon">&#9654;</span>
+                            <span>typeracer.exe</span>
+                        </a>
+                    </li>
+                    <li class="file-tree__item file-tree__folder">
+                        <a href="memorymatch.html" style="display: flex; align-items: center; gap: 8px; color: inherit; text-decoration: none;">
+                            <span class="file-tree__icon">&#9654;</span>
+                            <span>memorymatch.exe</span>
+                        </a>
+                    </li>
+                    <li class="file-tree__item file-tree__folder">
+                        <a href="log.html" style="display: flex; align-items: center; gap: 8px; color: inherit; text-decoration: none;">
+                            <span class="file-tree__icon">&#9654;</span>
+                            <span>log.dat</span>
+                        </a>
+                    </li>
+                    <li class="file-tree__divider"></li>
+                    <li class="file-tree__item">
+                        <span class="file-tree__icon">&#128196;</span>
+                        <span>contact.md</span>
+                    </li>
+                    <li class="file-tree__item">
+                        <span class="file-tree__icon">&#128196;</span>
+                        <span>README.md</span>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             MAIN CONTENT
+        ═══════════════════════════════════════════════════════════════════ -->
+        <main class="main">
+            <!-- ASCII ART HEADER -->
+            <header class="ascii-header">
+                <pre class="ascii-art">
+ ██████╗ █████╗ ███╗   ███╗
+██╔════╝██╔══██╗████╗ ████║
+██║     ███████║██╔████╔██║
+██║     ██╔══██║██║╚██╔╝██║
+╚██████╗██║  ██║██║ ╚═╝ ██║
+ ╚═════╝╚═╝  ╚═╝╚═╝     ╚═╝
+ ██████╗ █████╗ ███████╗██████╗ ███████╗██████╗ ███████╗ ██████╗ ███╗   ██╗
+██╔════╝██╔══██╗██╔════╝██╔══██╗██╔════╝██╔══██╗██╔════╝██╔═══██╗████╗  ██║
+██║     ███████║███████╗██████╔╝█████╗  ██████╔╝███████╗██║   ██║██╔██╗ ██║
+██║     ██╔══██║╚════██║██╔═══╝ ██╔══╝  ██╔══██╗╚════██║██║   ██║██║╚██╗██║
+╚██████╗██║  ██║███████║██║     ███████╗██║  ██║███████║╚██████╔╝██║ ╚████║
+ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝     ╚══════╝╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═══╝
+                </pre>
+                <p class="ascii-subtitle">
+                    <span class="bracket-decor">[</span>
+                    <span>Operations Strategist</span>
+                    <span class="text-muted"> // </span>
+                    <span>Systems Builder</span>
+                    <span class="text-muted"> // </span>
+                    <span>Problem Solver</span>
+                    <span class="bracket-decor">]</span>
+                </p>
+            </header>
+
+            <!-- ABOUT SECTION -->
+            <section class="section" id="about">
+                <div class="section__header">
+                    <span class="section__icon">&#9744;</span>
+                    <h2 class="section__title">./about/bio.json</h2>
+                    <div class="section__line"></div>
+                </div>
+
+                <div class="json-block">
+                    <div><span class="json-bracket">{</span></div>
+                    <div class="json-line">
+                        <span class="json-key">"name"</span>: <span class="json-string">"Cam Casperson"</span>,
+                    </div>
+                    <div class="json-line">
+                        <span class="json-key">"role"</span>: <span class="json-string">"Operations & Strategy Consultant"</span>,
+                    </div>
+                    <div class="json-line">
+                        <span class="json-key">"location"</span>: <span class="json-string">"Remote // Everywhere"</span>,
+                    </div>
+                    <div class="json-line">
+                        <span class="json-key">"status"</span>: <span class="json-string">"Available for Projects"</span>,
+                    </div>
+                    <div class="json-line">
+                        <span class="json-key">"mission"</span>: <span class="json-string">"Building efficient systems that scale"</span>
+                    </div>
+                    <div><span class="json-bracket">}</span></div>
+                </div>
+
+                <div class="json-block mt-4">
+                    <p class="json-comment">// Background</p>
+                    <p class="mt-2">
+                        Former accounting operations professional turned systems builder.
+                        I bring analytical precision to business operations, combining
+                        financial acumen with modern technology to create efficient,
+                        scalable workflows.
+                    </p>
+                    <p class="mt-2 text-secondary">
+                        Obsessed with optimization. Allergic to inefficiency.
+                        Building the future, one system at a time.
+                    </p>
+                </div>
+            </section>
+
+            <!-- SERVICES SECTION -->
+            <section class="section" id="services">
+                <div class="section__header">
+                    <span class="section__icon">&#9881;</span>
+                    <h2 class="section__title">./services/offerings.json</h2>
+                    <div class="section__line"></div>
+                </div>
+
+                <div class="skills-grid">
+                    <div class="skill-item">
+                        <span class="skill-item__arrow">&#8594;</span>
+                        <div>
+                            <div class="skill-item__name">Operations Strategy</div>
+                            <div class="skill-item__desc">
+                                Streamline workflows, eliminate bottlenecks, build systems that scale
+                            </div>
+                        </div>
+                    </div>
+                    <div class="skill-item">
+                        <span class="skill-item__arrow">&#8594;</span>
+                        <div>
+                            <div class="skill-item__name">Process Automation</div>
+                            <div class="skill-item__desc">
+                                Automate repetitive tasks, integrate tools, free up human potential
+                            </div>
+                        </div>
+                    </div>
+                    <div class="skill-item">
+                        <span class="skill-item__arrow">&#8594;</span>
+                        <div>
+                            <div class="skill-item__name">Financial Operations</div>
+                            <div class="skill-item__desc">
+                                Accounting systems, financial workflows, data-driven decisions
+                            </div>
+                        </div>
+                    </div>
+                    <div class="skill-item">
+                        <span class="skill-item__arrow">&#8594;</span>
+                        <div>
+                            <div class="skill-item__name">Technology Integration</div>
+                            <div class="skill-item__desc">
+                                Connect disparate systems, build unified dashboards, create clarity
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SKILLS SECTION -->
+            <section class="section" id="skills">
+                <div class="section__header">
+                    <span class="section__icon">&#128295;</span>
+                    <h2 class="section__title">./services/skills.yaml</h2>
+                    <div class="section__line"></div>
+                </div>
+
+                <div class="json-block">
+                    <div><span class="text-cyan">core_competencies:</span></div>
+                    <div class="json-line"><span class="text-muted">-</span> <span class="text-green">Operations Management</span></div>
+                    <div class="json-line"><span class="text-muted">-</span> <span class="text-green">Process Design</span></div>
+                    <div class="json-line"><span class="text-muted">-</span> <span class="text-green">Financial Analysis</span></div>
+                    <div class="json-line"><span class="text-muted">-</span> <span class="text-green">Systems Architecture</span></div>
+                    <div class="mt-4"><span class="text-cyan">tools:</span></div>
+                    <div class="json-line"><span class="text-muted">-</span> <span class="text-secondary">Spreadsheets (Advanced)</span></div>
+                    <div class="json-line"><span class="text-muted">-</span> <span class="text-secondary">Automation Platforms</span></div>
+                    <div class="json-line"><span class="text-muted">-</span> <span class="text-secondary">Project Management</span></div>
+                    <div class="json-line"><span class="text-muted">-</span> <span class="text-secondary">AI/LLM Tools</span></div>
+                    <div class="mt-4"><span class="text-cyan">learning:</span></div>
+                    <div class="json-line"><span class="text-muted">-</span> <span class="text-amber">Software Development</span></div>
+                    <div class="json-line"><span class="text-muted">-</span> <span class="text-amber">AI Engineering</span></div>
+                </div>
+            </section>
+
+            <!-- EXPERIENCE TIMELINE -->
+            <section class="section" id="experience">
+                <div class="section__header">
+                    <span class="section__icon">&#128197;</span>
+                    <h2 class="section__title">./about/experience.md</h2>
+                    <div class="section__line"></div>
+                </div>
+
+                <div class="timeline">
+                    <div class="timeline__item">
+                        <div class="timeline__dot"></div>
+                        <div class="timeline__year">NOW</div>
+                        <div class="timeline__title">Independent Consultant</div>
+                        <div class="timeline__desc">
+                            Building custom solutions for businesses ready to scale
+                        </div>
+                    </div>
+                    <div class="timeline__item">
+                        <div class="timeline__dot"></div>
+                        <div class="timeline__year">PREVIOUS</div>
+                        <div class="timeline__title">Accounting Operations</div>
+                        <div class="timeline__desc">
+                            Managed financial workflows, built reporting systems, optimized processes
+                        </div>
+                    </div>
+                    <div class="timeline__item">
+                        <div class="timeline__dot"></div>
+                        <div class="timeline__year">FOUNDATION</div>
+                        <div class="timeline__title">Analytical Background</div>
+                        <div class="timeline__desc">
+                            Developed systematic thinking and attention to detail
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PROJECTS SECTION -->
+            <section class="section" id="projects">
+                <div class="section__header">
+                    <span class="section__icon">&#128187;</span>
+                    <h2 class="section__title">./projects</h2>
+                    <div class="section__line"></div>
+                </div>
+
+                <div class="skills-grid">
+                    <a href="typeracer.html" style="text-decoration: none;">
+                        <div class="skill-item" style="cursor: pointer;">
+                            <span class="skill-item__arrow">&#9654;</span>
+                            <div>
+                                <div class="skill-item__name">typeracer.exe</div>
+                                <div class="skill-item__desc">
+                                    Test your typing speed with programming quotes. Track your WPM and compete against yourself.
+                                </div>
+                                <div style="margin-top: 8px; font-size: 0.75rem; color: var(--amber);">
+                                    [ CLICK TO PLAY ]
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                    <a href="memorymatch.html" style="text-decoration: none;">
+                        <div class="skill-item" style="cursor: pointer;">
+                            <span class="skill-item__arrow">&#9654;</span>
+                            <div>
+                                <div class="skill-item__name">memorymatch.exe</div>
+                                <div class="skill-item__desc">
+                                    Find matching pairs in this classic memory game. Three difficulty levels to challenge your recall.
+                                </div>
+                                <div style="margin-top: 8px; font-size: 0.75rem; color: var(--amber);">
+                                    [ CLICK TO PLAY ]
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </section>
+
+            <!-- CONTACT SECTION -->
+            <section class="section" id="contact">
+                <div class="section__header">
+                    <span class="section__icon">&#128231;</span>
+                    <h2 class="section__title">./contact.md</h2>
+                    <div class="section__line"></div>
+                </div>
+
+                <div class="json-block">
+                    <p class="json-comment">// Let's connect</p>
+                    <p class="mt-2 mb-4">
+                        Ready to build something great? Let's talk about your operations challenges.
+                    </p>
+
+                    <div class="contact-grid">
+                        <div class="contact-item">
+                            <span class="contact-item__label">email:</span>
+                            <a href="mailto:hello@camcasperson.com" class="contact-item__value">hello@camcasperson.com</a>
+                        </div>
+                        <div class="contact-item">
+                            <span class="contact-item__label">linkedin:</span>
+                            <a href="#" class="contact-item__value">/in/camcasperson</a>
+                        </div>
+                        <div class="contact-item">
+                            <span class="contact-item__label">github:</span>
+                            <a href="#" class="contact-item__value">@camcasperson</a>
+                        </div>
+                        <div class="contact-item">
+                            <span class="contact-item__label">location:</span>
+                            <span class="text-secondary">Remote // Available Worldwide</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="command-hint mt-4">
+                    <span>Press</span>
+                    <kbd>Ctrl</kbd>
+                    <span>+</span>
+                    <kbd>C</kbd>
+                    <span>to copy email</span>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         TERMINAL FOOTER
+    ═══════════════════════════════════════════════════════════════════ -->
+    <footer class="terminal-footer">
+        <div class="terminal-prompt">
+            <span class="terminal-prompt__user">visitor</span>
+            <span class="terminal-prompt__at">@</span>
+            <span class="terminal-prompt__host">camcasperson</span>
+            <span class="terminal-prompt__path">:~/portfolio$</span>
+            <span class="terminal-prompt__symbol"> _</span>
+            <span class="terminal-prompt__cursor"></span>
+        </div>
+    </footer>
+
+    <script>
+        // Live Clock
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
+        }
+
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // File Tree Navigation
+        document.querySelectorAll('.file-tree__item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.file-tree__item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Smooth scroll for navigation (if links are added)
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        // Console Easter Egg
+        console.log('%c SYSTEM ACCESS GRANTED ', 'background: #39ff14; color: #0a0a0a; font-weight: bold; padding: 4px 8px;');
+        console.log('%c Welcome to the terminal. ', 'color: #22d3ee;');
+        console.log('%c Type "help" for available commands... just kidding, this is a website. ', 'color: #888;');
+    </script>
+</body>
+</html>
